@@ -7,7 +7,7 @@ use substreams::{log, store::StoreAddInt64, Hex};
 use substreams_ethereum::{pb::eth::v2 as eth, NULL_ADDRESS};
 
 // Bored Ape Club Contract
-const TRACKED_CONTRACT: [u8; 20] = hex!("bc4ca0eda7647a8ab7c2061c2e118a18a936f13d");
+const TRACKED_CONTRACT: [u8; 20] = hex!("86935f11c86623dec8a25696e1c19a8659cbf95d");
 
 substreams_ethereum::init!();
 

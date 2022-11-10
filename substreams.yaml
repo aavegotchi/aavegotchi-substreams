@@ -20,7 +20,7 @@ binaries:
 modules:
   - name: map_transfers
     kind: map
-    initialBlock: 12287507
+    initialBlock: 29592346
     inputs:
       - source: sf.ethereum.type.v2.Block
     output:
@@ -28,7 +28,7 @@ modules:
 
   - name: store_transfers
     kind: store
-    initialBlock: 12287507
+    initialBlock: 29592346
     updatePolicy: add
     valueType: int64
     inputs:
