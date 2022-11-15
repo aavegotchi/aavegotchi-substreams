@@ -1,9 +1,10 @@
 mod abi;
 mod pb;
 use hex_literal::hex;
+use pb::aavegotchi;
 use pb::erc721;
 use substreams::prelude::*;
-use substreams::{log, store::StoreAddInt64, Hex};
+use substreams::{log, store::StoreAddInt64, store::StoreSetI64, Hex};
 use substreams_ethereum::{pb::eth::v2 as eth, NULL_ADDRESS};
 
 // Bored Ape Club Contract
@@ -51,4 +52,45 @@ fn store_transfers(transfers: erc721::Transfers, s: StoreAddInt64) {
 
 fn generate_key(holder: &Vec<u8>) -> String {
     return format!("total:{}:{}", Hex(holder), Hex(TRACKED_CONTRACT));
+}
+
+/// Extracts mint events from the contract
+#[substreams::handlers::map]
+fn map_xingyuns(blk: eth::Block) -> Result<aavegotchi::Xingyuns, substreams::errors::Error> {
+    Ok(aavegotchi::Xingyuns {
+        xingyuns: blk
+            .events::<abi::core_diamond::events::Xingyun>(&[&TRACKED_CONTRACT])
+            .map(|(xingyun, log)| {
+                substreams::log::info!("Xingyun seen");
+
+                aavegotchi::Xingyun {
+                    from: xingyun.from,
+                    to: xingyun.to,
+                    token_id: xingyun.token_id.low_u64(),
+                    ordinal: log.block_index() as u64,
+                    num_aavegotchis_to_purchase: xingyun.num_aavegotchis_to_purchase.low_u64(),
+                    total_price: xingyun.total_price.low_u64(),
+                    trx_hash: log.receipt.transaction.hash.clone(),
+                }
+            })
+            .collect(),
+    })
+}
+
+/// Store the total balance of NFT tokens for the specific TRACKED_CONTRACT by holder
+#[substreams::handlers::store]
+fn store_portals(xingyuns: aavegotchi::Xingyuns, s: StoreSetI64) {
+    log::info!("NFT holders state builder");
+    xingyuns.xingyuns.into_iter().for_each(|xingyun| {
+        let mut count = 0;
+        loop {
+            log::info!("Found a xingyun in {} {}", Hex(&xingyun.trx_hash), count);
+            count += 1;
+            if (count == xingyun.num_aavegotchis_to_purchase) {
+                break;
+            }
+        }
+        log::info!("Done  {}", Hex(&xingyun.trx_hash));
+        // s.add(transfer.ordinal, generate_key(&transfer.to), 1);
+    });
 }
