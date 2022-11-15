@@ -9,6 +9,7 @@ imports:
 protobuf:
   files:
     - erc721.proto
+    - aavegotchi-core-diamond.proto
   importPaths:
     - ./proto
 
@@ -18,6 +19,22 @@ binaries:
     file: ./target/wasm32-unknown-unknown/release/substreams_template.wasm
 
 modules:
+  - name: map_xingyuns
+    kind: map
+    initialBlock: 11516320
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:eth.aavegotchi.v1.Xingyuns
+
+  - name: store_portals
+    kind: store
+    initialBlock: 11516320
+    updatePolicy: set
+    valueType: int64
+    inputs:
+      - map: map_xingyuns
+
   - name: map_transfers
     kind: map
     initialBlock: 11516320
