@@ -23,9 +23,7 @@ message Portals {
 message Portal {
   uint64 tokenId = 1;
   bytes owner = 2;
-  uint64 created_at_timestamp = 3;
-  uint64 created_at_block_number = 4;
-  bool opened = 5; 
+  bool opened = 3; 
   // @ todo add optional choices if opened
 }
 

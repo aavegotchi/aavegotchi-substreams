@@ -33,6 +33,7 @@ modules:
     updatePolicy: set
     valueType: int64
     inputs:
+      - map: map_open_portals
       - map: map_xingyuns
 
   - name: map_transfers
@@ -50,3 +51,11 @@ modules:
     valueType: int64
     inputs:
       - map: map_transfers
+
+  - name: map_open_portals
+    kind: map
+    initialBlock: 11516320
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:eth.aavegotchi.v1.OpenPortals
