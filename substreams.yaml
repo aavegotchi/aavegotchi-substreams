@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: "substreams_template"
+  name: "aavegotchi_substreams"
   version: v0.1.0
 
 imports:
