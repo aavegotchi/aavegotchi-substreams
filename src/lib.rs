@@ -1,24 +1,18 @@
 mod abi;
 mod pb;
-use std::vec;
 
 use hex_literal::hex;
 use pb::aavegotchi;
-use pb::erc721;
 use substreams::prelude::*;
 use substreams::store::StoreGetProto;
 use substreams::store::StoreSetProto;
-use substreams::{log, store::StoreAddInt64, Hex};
-use substreams_ethereum::{pb::eth::v2 as eth, NULL_ADDRESS};
+use substreams::{log, Hex};
+use substreams_ethereum::pb::eth::v2 as eth;
 
-// Bored Ape Club Contract
+// Aavegotchi Contract
 const TRACKED_CONTRACT: [u8; 20] = hex!("86935f11c86623dec8a25696e1c19a8659cbf95d");
 
 substreams_ethereum::init!();
-
-fn generate_key(holder: &Vec<u8>) -> String {
-    return format!("total:{}:{}", Hex(holder), Hex(TRACKED_CONTRACT));
-}
 
 /// Extracts mint events from the contract
 #[substreams::handlers::map]
@@ -90,7 +84,7 @@ fn map_open_portals(blk: eth::Block) -> Result<aavegotchi::OpenPortals, substrea
     })
 }
 
-/// Store the minted closed portals
+/// Store the open portals
 #[substreams::handlers::store]
 fn store_open_portals(
     closed_portals: StoreGetProto<aavegotchi::Portal>,
@@ -112,7 +106,7 @@ fn store_open_portals(
     }
 }
 
-// extract open portal events from the contract
+// extract claim aavegotchi events from the contract
 #[substreams::handlers::map]
 fn map_claim_aavegotchi(
     blk: eth::Block,
@@ -135,7 +129,7 @@ fn map_claim_aavegotchi(
     })
 }
 
-/// Store the minted closed portals
+/// Store the claimed aavegotchis
 #[substreams::handlers::store]
 fn store_aavegotchis(
     claimed_gotchis: aavegotchi::ClaimAavegotchis,
@@ -165,7 +159,7 @@ fn store_aavegotchis(
     }
 }
 
-/// Store the minted closed portals
+/// Upate the claimed portals
 #[substreams::handlers::store]
 fn store_claimed_portal(
     claimed_gotchis: aavegotchi::ClaimAavegotchis,
