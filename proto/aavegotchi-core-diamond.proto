@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package eth.aavegotchi.v1;
+
+message Xingyuns {
+  repeated Xingyun xingyuns = 1;
+}
+
+message Xingyun {
+  bytes from = 1;
+  bytes to = 2;
+  uint64 token_id = 3;
+  uint64 numAavegotchisToPurchase = 4;
+  uint64 totalPrice = 5;
+  bytes trx_hash = 6;
+  uint64 ordinal = 7;
+}
+
+message Portals {
+  repeated Portal portals = 1;
+}
+
+message Portal {
+  uint64 tokenId = 1;
+  bytes owner = 2;
+  bool opened = 3; 
+  bool claimed = 4;
+  // @ todo add optional choices if opened
+}
+
+message Gotchis {
+  repeated Gotchi gotchis = 1;
+}
+
+message Gotchi {
+  uint64 tokenId = 1;
+  bytes owner = 2; 
+  uint64 created_at_timestamp = 3;
+  uint64 created_at_block_number = 4;
+  uint32 status = 5; // enum 
+}
+
+message OpenPortals {
+  repeated OpenPortal portals = 1;
+}
+
+message OpenPortal  {
+  bytes from = 1;
+  uint64 token_id = 3;
+  bytes trx_hash = 6;
+  uint64 ordinal = 7;
+}
+
+message ClaimAavegotchis {
+  repeated ClaimAavegotchi aavegotchisClaimed = 1;
+}
+
+message ClaimAavegotchi {
+  bytes from = 1;
+  uint64 token_id = 3;
+  bytes trx_hash = 6;
+  uint64 ordinal = 7;
+  uint64 created_at_timestamp = 8;
+  uint64 created_at_block_number = 9;
+}
