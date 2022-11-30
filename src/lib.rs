@@ -1,9 +1,12 @@
 mod abi;
 mod pb;
+use std::vec;
+
 use hex_literal::hex;
 use pb::aavegotchi;
 use pb::erc721;
 use substreams::prelude::*;
+use substreams::store::StoreGetProto;
 use substreams::store::StoreSetProto;
 use substreams::{log, store::StoreAddInt64, Hex};
 use substreams_ethereum::{pb::eth::v2 as eth, NULL_ADDRESS};
@@ -12,44 +15,6 @@ use substreams_ethereum::{pb::eth::v2 as eth, NULL_ADDRESS};
 const TRACKED_CONTRACT: [u8; 20] = hex!("86935f11c86623dec8a25696e1c19a8659cbf95d");
 
 substreams_ethereum::init!();
-
-/// Extracts transfers events from the contract
-#[substreams::handlers::map]
-fn map_transfers(blk: eth::Block) -> Result<erc721::Transfers, substreams::errors::Error> {
-    Ok(erc721::Transfers {
-        transfers: blk
-            .events::<abi::erc721::events::Transfer>(&[&TRACKED_CONTRACT])
-            .map(|(transfer, log)| {
-                substreams::log::info!("NFT Transfer seen");
-
-                erc721::Transfer {
-                    trx_hash: log.receipt.transaction.hash.clone(),
-                    from: transfer.from,
-                    to: transfer.to,
-                    token_id: transfer.token_id.low_u64(),
-                    ordinal: log.block_index() as u64,
-                }
-            })
-            .collect(),
-    })
-}
-
-/// Store the total balance of NFT tokens for the specific TRACKED_CONTRACT by holder
-#[substreams::handlers::store]
-fn store_transfers(transfers: erc721::Transfers, s: StoreAddInt64) {
-    log::info!("NFT holders state builder");
-    for transfer in transfers.transfers {
-        if transfer.from != NULL_ADDRESS {
-            log::info!("Found a transfer out {}", Hex(&transfer.trx_hash));
-            s.add(transfer.ordinal, generate_key(&transfer.from), -1);
-        }
-
-        if transfer.to != NULL_ADDRESS {
-            log::info!("Found a transfer in {}", Hex(&transfer.trx_hash));
-            s.add(transfer.ordinal, generate_key(&transfer.to), 1);
-        }
-    }
-}
 
 fn generate_key(holder: &Vec<u8>) -> String {
     return format!("total:{}:{}", Hex(holder), Hex(TRACKED_CONTRACT));
@@ -80,11 +45,7 @@ fn map_xingyuns(blk: eth::Block) -> Result<aavegotchi::Xingyuns, substreams::err
 
 /// Store the minted closed portals
 #[substreams::handlers::store]
-fn store_portals(
-    xingyuns: aavegotchi::Xingyuns,
-    open_portal_events: aavegotchi::OpenPortals,
-    store: StoreSetProto<aavegotchi::Portal>,
-) {
+fn store_closed_portals(xingyuns: aavegotchi::Xingyuns, store: StoreSetProto<aavegotchi::Portal>) {
     for xingyun in xingyuns.xingyuns {
         let mut count = 0;
         let from = xingyun.from;
@@ -107,18 +68,6 @@ fn store_portals(
         log::info!("Done  {}", Hex(xingyun.trx_hash));
         // s.add(transfer.ordinal, generate_key(&transfer.to), 1);
     }
-
-    for open_portal in open_portal_events.portals {
-        store.set(
-            open_portal.ordinal,
-            open_portal.token_id.to_string(),
-            &aavegotchi::Portal {
-                token_id: open_portal.token_id,
-                owner: open_portal.from,
-                opened: true,
-            },
-        )
-    }
 }
 
 // extract open portal events from the contract
@@ -138,4 +87,26 @@ fn map_open_portals(blk: eth::Block) -> Result<aavegotchi::OpenPortals, substrea
             })
             .collect(),
     })
+}
+
+/// Store the minted closed portals
+#[substreams::handlers::store]
+fn store_open_portals(
+    closed_portals: StoreGetProto<aavegotchi::Portal>,
+    portals: aavegotchi::OpenPortals,
+    store: StoreSetProto<aavegotchi::Portal>,
+) {
+    let mut count = 0;
+    for portal in portals.portals {
+        if let Some(portal) = closed_portals.get_last(portal.token_id.to_string()) {
+            let mut new_portal = portal.clone();
+            new_portal.opened = true;
+
+            store.set(count, (portal.token_id).to_string(), &new_portal);
+            count += 1;
+        } else {
+            log::debug!("portal {} does not exist", portal.token_id.to_string());
+            continue;
+        }
+    }
 }
