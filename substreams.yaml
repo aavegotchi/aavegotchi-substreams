@@ -27,35 +27,53 @@ modules:
     output:
       type: proto:eth.aavegotchi.v1.Xingyuns
 
-  - name: store_portals
+  - name: store_closed_portals
     kind: store
     initialBlock: 11516320
     updatePolicy: set
-    valueType: int64
+    valueType: proto:eth.aavegotchi.v1.Portal
     inputs:
-      - map: map_open_portals
       - map: map_xingyuns
-
-  - name: map_transfers
-    kind: map
-    initialBlock: 11516320
-    inputs:
-      - source: sf.ethereum.type.v2.Block
-    output:
-      type: proto:eth.erc721.v1.Transfers
-
-  - name: store_transfers
-    kind: store
-    initialBlock: 11516320
-    updatePolicy: add
-    valueType: int64
-    inputs:
-      - map: map_transfers
 
   - name: map_open_portals
     kind: map
     initialBlock: 11516320
     inputs:
+      - store: store_closed_portals
       - source: sf.ethereum.type.v2.Block
     output:
       type: proto:eth.aavegotchi.v1.OpenPortals
+
+  - name: store_open_portals
+    kind: store
+    initialBlock: 11516320
+    updatePolicy: set
+    valueType: proto:eth.aavegotchi.v1.Portal
+    inputs:
+      - map: map_open_portals
+
+  - name: map_claim_aavegotchi
+    kind: map
+    initialBlock: 11516320
+    inputs:
+      - store: store_open_portals
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:eth.aavegotchi.v1.ClaimAavegotchis
+
+  - name: store_aavegotchis
+    kind: store
+    initialBlock: 11516320
+    updatePolicy: set
+    valueType: proto:eth.aavegotchi.v1.Gotchi
+    inputs:
+      - map: map_claim_aavegotchi
+
+  - name: store_claimed_portal
+    kind: store
+    initialBlock: 11516320
+    updatePolicy: set
+    valueType: proto:eth.aavegotchi.v1.Portal
+    inputs:
+      - store: store_open_portals
+      - map: map_claim_aavegotchi
