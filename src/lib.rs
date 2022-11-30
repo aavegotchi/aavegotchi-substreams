@@ -58,6 +58,7 @@ fn store_closed_portals(xingyuns: aavegotchi::Xingyuns, store: StoreSetProto<aav
                     token_id: &xingyun.token_id + count,
                     owner: from.clone(),
                     opened: false,
+                    claimed: false,
                 },
             );
             count += 1;
@@ -106,6 +107,84 @@ fn store_open_portals(
             count += 1;
         } else {
             log::debug!("portal {} does not exist", portal.token_id.to_string());
+            continue;
+        }
+    }
+}
+
+// extract open portal events from the contract
+#[substreams::handlers::map]
+fn map_claim_aavegotchi(
+    blk: eth::Block,
+) -> Result<aavegotchi::ClaimAavegotchis, substreams::errors::Error> {
+    Ok(aavegotchi::ClaimAavegotchis {
+        aavegotchis_claimed: blk
+            .events::<abi::core_diamond::events::ClaimAavegotchi>(&[&TRACKED_CONTRACT])
+            .map(|(claim_aavegotchi, log)| -> aavegotchi::ClaimAavegotchi {
+                substreams::log::info!("Portal Open seen");
+                aavegotchi::ClaimAavegotchi {
+                    from: log.receipt.transaction.from.clone(),
+                    token_id: claim_aavegotchi.token_id.low_u64(),
+                    trx_hash: log.receipt.transaction.hash.clone(),
+                    ordinal: log.block_index() as u64,
+                    created_at_block_number: blk.number,
+                    created_at_timestamp: blk.timestamp_seconds(),
+                }
+            })
+            .collect(),
+    })
+}
+
+/// Store the minted closed portals
+#[substreams::handlers::store]
+fn store_aavegotchis(
+    claimed_gotchis: aavegotchi::ClaimAavegotchis,
+    open_portals: StoreGetProto<aavegotchi::Portal>,
+    store: StoreSetProto<aavegotchi::Gotchi>,
+) {
+    let mut count = 0;
+    for claimed_gotchi in claimed_gotchis.aavegotchis_claimed {
+        if let Some(portal) = open_portals.get_last(claimed_gotchi.token_id.to_string()) {
+            let new_gotchi = aavegotchi::Gotchi {
+                created_at_block_number: claimed_gotchi.created_at_block_number,
+                created_at_timestamp: claimed_gotchi.created_at_timestamp,
+                status: 1,
+                token_id: claimed_gotchi.token_id,
+                owner: portal.owner,
+            };
+
+            store.set(count, (new_gotchi.token_id).to_string(), &new_gotchi);
+            count += 1;
+        } else {
+            log::debug!(
+                "portal {} does not exist",
+                claimed_gotchi.token_id.to_string()
+            );
+            continue;
+        }
+    }
+}
+
+/// Store the minted closed portals
+#[substreams::handlers::store]
+fn store_claimed_portal(
+    claimed_gotchis: aavegotchi::ClaimAavegotchis,
+    open_portals: StoreGetProto<aavegotchi::Portal>,
+    store: StoreSetProto<aavegotchi::Portal>,
+) {
+    let mut count = 0;
+    for claimed_gotchi in claimed_gotchis.aavegotchis_claimed {
+        if let Some(portal) = open_portals.get_last(claimed_gotchi.token_id.to_string()) {
+            let mut new_portal = portal.clone();
+            new_portal.claimed = true;
+
+            store.set(count, (new_portal.token_id).to_string(), &new_portal);
+            count += 1;
+        } else {
+            log::debug!(
+                "portal {} does not exist",
+                claimed_gotchi.token_id.to_string()
+            );
             continue;
         }
     }

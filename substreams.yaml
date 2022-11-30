@@ -56,7 +56,6 @@ modules:
     kind: map
     initialBlock: 11516320
     inputs:
-      - store: store_open_portals
       - source: sf.ethereum.type.v2.Block
     output:
       type: proto:eth.aavegotchi.v1.ClaimAavegotchis
@@ -68,6 +67,7 @@ modules:
     valueType: proto:eth.aavegotchi.v1.Gotchi
     inputs:
       - map: map_claim_aavegotchi
+      - store: store_open_portals
 
   - name: store_claimed_portal
     kind: store
@@ -75,5 +75,5 @@ modules:
     updatePolicy: set
     valueType: proto:eth.aavegotchi.v1.Portal
     inputs:
-      - store: store_open_portals
       - map: map_claim_aavegotchi
+      - store: store_open_portals

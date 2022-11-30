@@ -24,6 +24,7 @@ message Portal {
   uint64 tokenId = 1;
   bytes owner = 2;
   bool opened = 3; 
+  bool claimed = 4;
   // @ todo add optional choices if opened
 }
 
@@ -59,4 +60,6 @@ message ClaimAavegotchi {
   uint64 token_id = 3;
   bytes trx_hash = 6;
   uint64 ordinal = 7;
+  uint64 created_at_timestamp = 8;
+  uint64 created_at_block_number = 9;
 }
