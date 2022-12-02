@@ -63,3 +63,8 @@ message ClaimAavegotchi {
   uint64 created_at_timestamp = 8;
   uint64 created_at_block_number = 9;
 }
+
+message GraphOut {
+  repeated ClaimAavegotchi aavegotchis = 1;
+  repeated OpenPortal portals = 2;
+}

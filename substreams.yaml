@@ -77,3 +77,12 @@ modules:
     inputs:
       - map: map_claim_aavegotchi
       - store: store_open_portals
+
+  - name: graph_out
+    kind: map
+    initialBlock: 11516320
+    inputs:
+      - map: map_claim_aavegotchi
+      - map: map_open_portals
+    output:
+      type: proto:eth.aavegotchi.v1.GraphOut
