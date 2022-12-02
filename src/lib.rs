@@ -3,6 +3,9 @@ mod pb;
 
 use hex_literal::hex;
 use pb::aavegotchi;
+use pb::aavegotchi::ClaimAavegotchis;
+use pb::aavegotchi::GraphOut;
+use pb::aavegotchi::OpenPortals;
 use substreams::prelude::*;
 use substreams::store::StoreGetProto;
 use substreams::store::StoreSetProto;
@@ -182,4 +185,16 @@ fn store_claimed_portal(
             continue;
         }
     }
+}
+
+/// Maps to subgraph
+#[substreams::handlers::map]
+pub fn graph_out(
+    gotchis: ClaimAavegotchis,
+    portals: OpenPortals,
+) -> Result<aavegotchi::GraphOut, substreams::errors::Error> {
+    Ok(GraphOut {
+        aavegotchis: gotchis.aavegotchis_claimed,
+        portals: portals.portals,
+    })
 }
