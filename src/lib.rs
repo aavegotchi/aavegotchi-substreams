@@ -1,13 +1,18 @@
 mod abi;
 mod pb;
 
-use hex_literal::hex;
 use pb::aavegotchi;
+use substreams::errors::Error;
+use substreams::hex;
 use substreams::prelude::*;
+use substreams::store;
 use substreams::store::StoreGetProto;
 use substreams::store::StoreSetProto;
+
 use substreams::{log, Hex};
+use substreams_entity_change::pb::entity::EntityChanges;
 use substreams_ethereum::pb::eth::v2 as eth;
+use substreams_ethereum::pb::eth::v2::Block;
 
 // Aavegotchi Contract
 const TRACKED_CONTRACT: [u8; 20] = hex!("86935f11c86623dec8a25696e1c19a8659cbf95d");
@@ -26,11 +31,11 @@ fn map_xingyuns(blk: eth::Block) -> Result<aavegotchi::Xingyuns, substreams::err
                 aavegotchi::Xingyun {
                     from: xingyun.from,
                     to: xingyun.to,
-                    token_id: xingyun.token_id.low_u64(),
-                    ordinal: log.block_index() as u64,
-                    num_aavegotchis_to_purchase: xingyun.num_aavegotchis_to_purchase.low_u64(),
-                    total_price: xingyun.total_price.low_u64(),
+                    token_id: xingyun.token_id.to_u64(),
+                    num_aavegotchis_to_purchase: xingyun.num_aavegotchis_to_purchase.to_u64(),
+                    total_price: xingyun.total_price.to_u64(),
                     trx_hash: log.receipt.transaction.hash.clone(),
+                    ordinal: log.block_index() as u64,
                 }
             })
             .collect(),
@@ -75,7 +80,7 @@ fn map_open_portals(blk: eth::Block) -> Result<aavegotchi::OpenPortals, substrea
                 substreams::log::info!("Portal Open seen");
                 aavegotchi::OpenPortal {
                     from: log.receipt.transaction.from.clone(),
-                    token_id: portal_opened.token_id.low_u64(),
+                    token_id: portal_opened.token_id.to_u64(),
                     trx_hash: log.receipt.transaction.hash.clone(),
                     ordinal: log.block_index() as u64,
                 }
@@ -118,7 +123,7 @@ fn map_claim_aavegotchi(
                 substreams::log::info!("Portal Open seen");
                 aavegotchi::ClaimAavegotchi {
                     from: log.receipt.transaction.from.clone(),
-                    token_id: claim_aavegotchi.token_id.low_u64(),
+                    token_id: claim_aavegotchi.token_id.to_u64(),
                     trx_hash: log.receipt.transaction.hash.clone(),
                     ordinal: log.block_index() as u64,
                     created_at_block_number: blk.number,
@@ -182,4 +187,69 @@ fn store_claimed_portal(
             continue;
         }
     }
+}
+
+#[substreams::handlers::map]
+pub fn map_portal_entities(
+    block: Block,
+    pool_count_deltas: store::Deltas<DeltaBigInt>,
+    tx_count_deltas: store::Deltas<DeltaBigInt>,
+    swaps_volume_deltas: store::Deltas<DeltaBigDecimal>,
+    totals_deltas: store::Deltas<DeltaBigDecimal>,
+) -> Result<EntityChanges, Error> {
+    let mut entity_changes: EntityChanges = Default::default();
+
+    // FIXME: Hard-coded start block, how could we pull that from the manifest?
+    // if block.number == 12369621 {
+    //     db::factory_created_factory_entity_change(&mut entity_changes)
+    // }
+
+    // db::pool_created_factory_entity_change(&mut entity_changes, pool_count_deltas);
+    // db::tx_count_factory_entity_change(&mut entity_changes, tx_count_deltas);
+    // db::swap_volume_factory_entity_change(&mut entity_changes, swaps_volume_deltas);
+    // db::total_value_locked_factory_entity_change(&mut entity_changes, totals_deltas);
+
+    Ok(entity_changes)
+}
+
+#[substreams::handlers::map]
+pub fn map_aavegotchi_entities(
+    block: Block,
+    pool_count_deltas: store::Deltas<DeltaBigInt>,
+    tx_count_deltas: store::Deltas<DeltaBigInt>,
+    swaps_volume_deltas: store::Deltas<DeltaBigDecimal>,
+    totals_deltas: store::Deltas<DeltaBigDecimal>,
+) -> Result<EntityChanges, Error> {
+    let mut entity_changes: EntityChanges = Default::default();
+
+    // FIXME: Hard-coded start block, how could we pull that from the manifest?
+    // if block.number == 12369621 {
+    //     db::factory_created_factory_entity_change(&mut entity_changes)
+    // }
+
+    // db::pool_created_factory_entity_change(&mut entity_changes, pool_count_deltas);
+    // db::tx_count_factory_entity_change(&mut entity_changes, tx_count_deltas);
+    // db::swap_volume_factory_entity_change(&mut entity_changes, swaps_volume_deltas);
+    // db::total_value_locked_factory_entity_change(&mut entity_changes, totals_deltas);
+
+    Ok(entity_changes)
+}
+
+#[substreams::handlers::map]
+pub fn graph_out(
+    map_portal_entities: EntityChanges,
+    map_aavegotchi_entities: EntityChanges,
+) -> Result<EntityChanges, Error> {
+    let mut entity_changes: EntityChanges = Default::default();
+    // FIXME: Hard-coded start block, how could we pull that from the manifest?
+    // if block.number == 12369621 {
+    //     db::factory_created_factory_entity_change(&mut entity_changes)
+    // }
+
+    // db::pool_created_factory_entity_change(&mut entity_changes, pool_count_deltas);
+    // db::tx_count_factory_entity_change(&mut entity_changes, tx_count_deltas);
+    // db::swap_volume_factory_entity_change(&mut entity_changes, swaps_volume_deltas);
+    // db::total_value_locked_factory_entity_change(&mut entity_changes, totals_deltas);
+
+    Ok(entity_changes)
 }
